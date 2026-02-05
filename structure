@@ -1,0 +1,26 @@
+inception/
+│
+├── Makefile
+├── secrets/
+│   ├── db_password.txt
+│   ├── db_root_password.txt
+│   └── credentials.txt
+│
+└── srcs/
+    ├── .env
+    ├── docker-compose.yml
+    └── requirements/
+        ├── nginx/
+        │   ├── Dockerfile
+        │   ├── conf/
+        │   └── tools/
+        │
+        ├── wordpress/
+        │   ├── Dockerfile
+        │   ├── conf/
+        │   └── tools/
+        │
+        └── mariadb/
+            ├── Dockerfile
+            ├── conf/
+            └── tools/
