@@ -3,12 +3,6 @@
 
 # #“Start building my image from Alpine Linux version 3.18.”
 
-# FROM alpine:3.18 
-
-# RUN apk update && apk add nginx
-
-# COPY conf/nginx.conf /etc/nginx/nginx.conf
-
 
 FROM alpine:3.18
 
