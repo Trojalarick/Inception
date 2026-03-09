@@ -1,13 +1,15 @@
-# #Alpine = a very small Linux operating system
-# #3.18 = the version
+# Alpine = a very small Linux operating system
 
-# #“Start building my image from Alpine Linux version 3.18.”
+# Start building my image from Alpine Linux version 3.18.”
 
 
-FROM alpine:3.18
+FROM debian:bullseye
 
 # Install MariaDB
-RUN apk update && apk add mariadb mariadb-client
+RUN apt-get update && apt-get install -y \
+    mariadb-server \
+    mariadb-client \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create required directories
 RUN mkdir -p /var/lib/mysql /run/mysqld \
