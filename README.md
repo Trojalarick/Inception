@@ -1,20 +1,20 @@
-# Inception
+﻿# Inception
 
-> A system administration project from **42 School** — deploying a small infrastructure using **Docker** and **Docker Compose**, with each service running in its own container.
+> A system administration project from **42 School** -- deploying a small infrastructure using **Docker** and **Docker Compose**, with each service running in its own dedicated container.
 
 ---
 
 ## Overview
 
-This project sets up a fully functional WordPress website served over HTTPS, using three custom Docker containers:
+This project sets up a fully functional WordPress website served over HTTPS, using three custom-built Docker containers:
 
-| Service       | Role                                      | Port  |
-|---------------|-------------------------------------------|-------|
-| **NGINX**     | Reverse proxy with TLS (SSL)              | 443   |
-| **WordPress** | PHP-FPM application server                | 9000  |
-| **MariaDB**   | Relational database backend               | 3306  |
+| Service       | Role                              | Exposed port    |
+|---------------|-----------------------------------|-----------------|
+| **NGINX**     | Reverse proxy with TLS (SSL)      | 443 (host)      |
+| **WordPress** | PHP-FPM application server        | 9000 (internal) |
+| **MariaDB**   | Relational database backend       | 3306 (internal) |
 
-All containers are built from **Debian Bullseye** and orchestrated via `docker-compose`.
+All images are built from **Debian Bullseye** and orchestrated via `docker compose`.
 
 ---
 
@@ -26,17 +26,17 @@ User ──────────────────► NGINX
                             │
                     FastCGI (port 9000)
                             ▼
-                        WordPress (PHP-FPM)
+                       WordPress (PHP-FPM)
                             │
                       MySQL (port 3306)
                             ▼
                          MariaDB
 ```
 
-- **NGINX** is the only entry point, accepting connections on port 443 (TLSv1.2/1.3).
+- **NGINX** is the only external entry point, listening on port 443 (TLSv1.2 / TLSv1.3).
 - **WordPress** handles PHP processing via PHP-FPM and connects to MariaDB.
 - **MariaDB** stores all WordPress data in a persistent Docker volume.
-- All services communicate through a private Docker bridge network (`inception`).
+- All three services communicate over a private Docker bridge network (`inception`).
 
 ---
 
@@ -46,27 +46,27 @@ User ──────────────────► NGINX
 Inception/
 ├── Makefile
 ├── secrets/
-│   ├── credentials.txt
-│   ├── db_password.txt
-│   └── db_root_password.txt
+│   ├── credentials.tx          # WordPress admin credentials
+│   ├── db_password.txt         # MariaDB user password
+│   └── db_root_password.txt    # MariaDB root password
 └── srcs/
-    ├── .env
+    ├── .env                    # Environment variables for docker compose
     ├── docker-compose.yml
     └── requirements/
         ├── mariadb/
         │   ├── Dockerfile
         │   └── tools/
-        │       └── init_db.sh
+        │       └── init_db.sh      # DB init + user setup script
         ├── nginx/
         │   ├── Dockerfile
         │   ├── conf/
-        │   │   └── nginx.conf
+        │   │   └── nginx.conf      # NGINX + TLS configuration
         │   └── tools/
-        │       └── start.sh
+        │       └── start.sh        # SSL cert generation + nginx start
         └── wordpress/
             ├── Dockerfile
             └── tools/
-                └── setup.sh
+                └── setup.sh        # WordPress download + PHP-FPM start
 ```
 
 ---
@@ -83,14 +83,16 @@ Inception/
 
 ### 1. Configure environment variables
 
-Create `srcs/.env` with the following variables:
+Create `srcs/.env` with the following:
 
 ```env
 MYSQL_DATABASE=wordpress
 MYSQL_USER=wpuser
-MYSQL_PASSWORD=yourpassword
-MYSQL_ROOT_PASSWORD=yourrootpassword
+MYSQL_PASSWORD=<your_db_password>
+MYSQL_ROOT_PASSWORD=<your_db_root_password>
 ```
+
+> These values should match the passwords stored in the `secrets/` files.
 
 ### 2. Add the domain to `/etc/hosts`
 
@@ -98,34 +100,36 @@ MYSQL_ROOT_PASSWORD=yourrootpassword
 echo "127.0.0.1  salhalilogin.42.fr" | sudo tee -a /etc/hosts
 ```
 
+> To use a different 42 login, also update `server_name` in `srcs/requirements/nginx/conf/nginx.conf` and the `-subj` flag in `srcs/requirements/nginx/tools/start.sh`.
+
 ---
 
 ## Usage
 
 ```bash
-# Build and start all containers
+# Build images and start all containers (detached)
 make
 
-# Stop all containers
+# Stop all running containers
 make down
 
-# Stop and remove volumes
+# Stop containers and remove volumes
 make clean
 
-# Full cleanup (containers, volumes, images)
+# Full cleanup: containers, volumes, and all built images
 make fclean
 
 # Rebuild everything from scratch
 make re
 ```
 
-Once running, open your browser at:
+Once running, visit:
 
 ```
 https://salhalilogin.42.fr
 ```
 
-> The SSL certificate is self-signed and generated at startup — your browser may show a security warning, which you can safely bypass for local development.
+> A self-signed SSL certificate is generated automatically at container startup. Your browser will show a security warning -- this is expected for local development and can be safely bypassed.
 
 ---
 
@@ -133,38 +137,40 @@ https://salhalilogin.42.fr
 
 ### NGINX
 - Built from `debian:bullseye`
-- Generates a self-signed SSL certificate on startup via `openssl`
-- Supports **TLSv1.2** and **TLSv1.3** only
-- Proxies PHP requests to WordPress via FastCGI
+- On startup, generates a self-signed RSA-2048 certificate valid for 365 days via `openssl`
+- Only accepts **TLSv1.2** and **TLSv1.3** -- older protocols are disabled
+- Routes all `.php` requests to WordPress over FastCGI on port 9000
+- Serves static files directly from the shared `wordpress_data` volume
 
 ### WordPress
 - Built from `debian:bullseye`
-- Runs **PHP 7.4-FPM** on port 9000
-- Automatically downloads and installs WordPress on first launch
-- Waits for MariaDB to be ready before starting
+- Runs **PHP 7.4-FPM** listening on TCP port 9000 (not a Unix socket)
+- On first start: downloads the latest WordPress tarball, extracts it, and writes `wp-config.php` from environment variables
+- Uses `netcat` to poll MariaDB on port 3306 and waits for it to be ready before starting PHP-FPM
 
 ### MariaDB
 - Built from `debian:bullseye`
-- Initializes the database, root password, and WordPress user on first run
+- On first start: initialises the data directory with `mysql_install_db`, spins up a temporary instance to create the database, WordPress user, and root password, then restarts normally
+- Binds to `0.0.0.0` so WordPress can reach it over the Docker network
 - Data is persisted in a named Docker volume (`mariadb_data`)
 
 ---
 
 ## Volumes
 
-| Volume           | Mount point           | Purpose                  |
-|------------------|-----------------------|--------------------------|
-| `mariadb_data`   | `/var/lib/mysql`      | Database persistence     |
-| `wordpress_data` | `/var/www/html`       | WordPress files          |
+| Volume           | Container mount point | Purpose                             |
+|------------------|-----------------------|-------------------------------------|
+| `mariadb_data`   | `/var/lib/mysql`      | MariaDB database persistence        |
+| `wordpress_data` | `/var/www/html`       | WordPress files (shared with NGINX) |
 
 ---
 
 ## Network
 
-All containers are connected to the `inception` bridge network. Only NGINX exposes a port to the host (`443`). MariaDB and WordPress are isolated from the outside.
+All containers are attached to the `inception` bridge network. Only NGINX publishes a port to the host (`443:443`). WordPress and MariaDB are not directly reachable from outside the Docker network.
 
 ---
 
 ## Author
 
-**salaheddine-h** — [42 School](https://42.fr)
+**alarick** -- [42 School](https://42.fr)
