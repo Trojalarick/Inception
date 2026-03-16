@@ -97,7 +97,7 @@ MYSQL_ROOT_PASSWORD=<your_db_root_password>
 ### 2. Add the domain to `/etc/hosts`
 
 ```bash
-echo "127.0.0.1  salhalilogin.42.fr" | sudo tee -a /etc/hosts
+echo "127.0.0.1  yourlogin.42.fr" | sudo tee -a /etc/hosts
 ```
 
 > To use a different 42 login, also update `server_name` in `srcs/requirements/nginx/conf/nginx.conf` and the `-subj` flag in `srcs/requirements/nginx/tools/start.sh`.
@@ -126,7 +126,7 @@ make re
 Once running, visit:
 
 ```
-https://salhalilogin.42.fr
+https://yourlogin.42.fr
 ```
 
 > A self-signed SSL certificate is generated automatically at container startup. Your browser will show a security warning -- this is expected for local development and can be safely bypassed.
