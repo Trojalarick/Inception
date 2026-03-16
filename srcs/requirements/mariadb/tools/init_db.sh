@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Initialize MariaDB data directory if not already done
 if [ ! -d "/var/lib/mysql/mysql" ]; then
