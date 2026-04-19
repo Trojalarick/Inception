@@ -20,6 +20,7 @@ RUN sed -i 's/listen = \/run\/php\/php7.4-fpm.sock/listen = 9000/g' /etc/php/7.4
 
 # Create working directory
 RUN mkdir -p /var/www/html
+RUN mkdir -p /run/php
 
 # Copy setup script
 COPY tools/setup.sh /usr/local/bin/setup.sh
