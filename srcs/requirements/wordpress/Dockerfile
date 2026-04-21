@@ -1,33 +1,30 @@
 FROM debian:bullseye
 
 RUN apt-get update && apt-get install -y \
-    php7.4-fpm \
-    php7.4-mysql \
-    php7.4-curl \
-    php7.4-gd \
-    php7.4-mbstring \
-    php7.4-xml \
-    php7.4-zip \
-    curl \
+    php \
+    php-fpm \
+    php-mysql \
     wget \
-    tar \
-    netcat \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure PHP-FPM to listen on port 9000
-RUN sed -i 's/listen = \/run\/php\/php7.4-fpm.sock/listen = 9000/g' /etc/php/7.4/fpm/pool.d/www.conf && \
-    sed -i 's/;clear_env = no/clear_env = no/g' /etc/php/7.4/fpm/pool.d/www.conf
+# Fix php-fpm to listen on port 9000
+RUN sed -i "s|listen = .*|listen = 9000|" /etc/php/7.4/fpm/pool.d/www.conf
 
-# Create working directory
-RUN mkdir -p /var/www/html
+# Create required runtime dir
 RUN mkdir -p /run/php
 
-# Copy setup script
-COPY tools/setup.sh /usr/local/bin/setup.sh
-RUN chmod +x /usr/local/bin/setup.sh
+# Set working directory
+WORKDIR /var/www/html
 
-# Expose PHP-FPM port
+# Download WordPress
+RUN wget https://wordpress.org/latest.tar.gz \
+    && tar -xvf latest.tar.gz --strip-components=1 \
+    && rm latest.tar.gz
+
+# Fix permissions
+RUN chown -R www-data:www-data /var/www/html
+
 EXPOSE 9000
 
-# Start WordPress setup
-ENTRYPOINT ["/usr/local/bin/setup.sh"]
+CMD ["php-fpm7.4", "-F"]

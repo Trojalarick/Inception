@@ -145,7 +145,7 @@ https://yourlogin.42.fr
 ### WordPress
 - Built from `debian:bullseye`
 - Runs **PHP 7.4-FPM** listening on TCP port 9000 (not a Unix socket)
-- On first start: downloads the latest WordPress tarball, extracts it, and writes `wp-config.php` from environment variables
+- On first start: downloads the bullseye WordPress tarball, extracts it, and writes `wp-config.php` from environment variables
 - Uses `netcat` to poll MariaDB on port 3306 and waits for it to be ready before starting PHP-FPM
 
 ### MariaDB

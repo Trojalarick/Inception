@@ -4,9 +4,9 @@ mkdir -p /var/www/html
 cd /var/www/html
 
 # Download WordPress
-wget https://wordpress.org/latest.tar.gz
-tar -xzf latest.tar.gz --strip-components=1
-rm latest.tar.gz
+wget https://wordpress.org/bullseye.tar.gz
+tar -xzf bullseye.tar.gz --strip-components=1
+rm bullseye.tar.gz
 
 # Permissions
 chown -R www-data:www-data /var/www/html

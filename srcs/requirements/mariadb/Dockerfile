@@ -1,8 +1,3 @@
-# Alpine = a very small Linux operating system
-
-# Start building my image from Alpine Linux version 3.18.”
-
-
 FROM debian:bullseye
 
 # Install MariaDB
@@ -15,6 +10,7 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p /var/lib/mysql /run/mysqld \
     && chown -R mysql:mysql /var/lib/mysql /run/mysqld
 
+COPY conf/my.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 
 # Copy database initialization script
 COPY tools/init_db.sh /usr/local/bin/init_db.sh

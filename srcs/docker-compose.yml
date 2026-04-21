@@ -44,6 +44,15 @@ services:
       - wordpress_data:/var/www/html
     networks:
       - inception
+    # redis:
+    #   build:
+    #     context: ./requirements/bonus/redis
+    #   contanier_name: redis
+    #   image: redis:inception
+    #   restart: always
+    #   depands_on:
+    #   ports:
+        # - 
 
 volumes:
   mariadb_data:
