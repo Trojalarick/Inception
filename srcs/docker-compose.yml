@@ -1,12 +1,10 @@
 version: "3.9"
 
 services:
-
   mariadb:
     build:
       context: ./requirements/mariadb
     container_name: mariadb
-    image: mariadb:inception
     restart: always
     env_file:
       - .env
@@ -19,10 +17,10 @@ services:
     build:
       context: ./requirements/wordpress
     container_name: wordpress
-    image: wordpress:inception
     restart: always
     depends_on:
       - mariadb
+      - redis
     env_file:
       - .env
     volumes:
@@ -34,7 +32,6 @@ services:
     build:
       context: ./requirements/nginx
     container_name: nginx
-    image: nginx:inception
     restart: always
     depends_on:
       - wordpress
@@ -49,7 +46,6 @@ services:
     build:
       context: ./requirements/bonus/redis
     container_name: redis
-    image: redis:inception
     restart: always
     networks:
       - inception
@@ -58,10 +54,12 @@ services:
     build:
       context: ./requirements/bonus/ftp
     container_name: ftp
-    image: ftp:inception
     restart: always
+    env_file:
+      - .env
     ports:
       - "21:21"
+      - "21100-21110:21100-21110"
     volumes:
       - wordpress_data:/var/www/html
     networks:
@@ -71,8 +69,11 @@ services:
     build:
       context: ./requirements/bonus/adminer
     container_name: adminer
-    image: adminer:inception
     restart: always
+    depends_on:
+      - mariadb
+    ports:
+      - "8080:8080"
     networks:
       - inception
 
