@@ -1,8 +1,6 @@
-# Use the official Redis image
-FROM debian:bullseye
+FROM debian:trixie
 
-# Copy your custom configuration file into the container
-COPY redis.conf /usr/local/etc/redis/redis.conf
+RUN apt-get update && apt-get install -y redis-server \
+    && rm -rf /var/lib/apt/lists/*
 
-# Start Redis using the custom configuration
-CMD [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+CMD ["redis-server", "--protected-mode", "no"]

@@ -1,4 +1,6 @@
-FROM debian:bullseye
+FROM debian:trixie
+
+RUN apt-get update && apt-get install -y php-redis
 
 RUN apt-get update && apt-get install -y \
     php \
@@ -9,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Fix php-fpm to listen on port 9000
-RUN sed -i "s|listen = .*|listen = 9000|" /etc/php/7.4/fpm/pool.d/www.conf
+RUN sed -i "s|listen = .*|listen = 9000|" /etc/php/8.4/fpm/pool.d/www.conf
 
 # Create required runtime dir
 RUN mkdir -p /run/php
@@ -27,4 +29,4 @@ RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 9000
 
-CMD ["php-fpm7.4", "-F"]
+CMD ["php-fpm8.4", "-F"]

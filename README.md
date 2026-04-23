@@ -14,7 +14,7 @@ This project sets up a fully functional WordPress website served over HTTPS, usi
 | **WordPress** | PHP-FPM application server        | 9000 (internal) |
 | **MariaDB**   | Relational database backend       | 3306 (internal) |
 
-All images are built from **Debian Bullseye** and orchestrated via `docker compose`.
+All images are built from **Debian trixie** and orchestrated via `docker compose`.
 
 ---
 
@@ -136,20 +136,20 @@ https://yourlogin.42.fr
 ## Services
 
 ### NGINX
-- Built from `debian:bullseye`
+- Built from `debian:trixie`
 - On startup, generates a self-signed RSA-2048 certificate valid for 365 days via `openssl`
 - Only accepts **TLSv1.2** and **TLSv1.3** -- older protocols are disabled
 - Routes all `.php` requests to WordPress over FastCGI on port 9000
 - Serves static files directly from the shared `wordpress_data` volume
 
 ### WordPress
-- Built from `debian:bullseye`
+- Built from `debian:trixie`
 - Runs **PHP 7.4-FPM** listening on TCP port 9000 (not a Unix socket)
-- On first start: downloads the bullseye WordPress tarball, extracts it, and writes `wp-config.php` from environment variables
+- On first start: downloads the trixie WordPress tarball, extracts it, and writes `wp-config.php` from environment variables
 - Uses `netcat` to poll MariaDB on port 3306 and waits for it to be ready before starting PHP-FPM
 
 ### MariaDB
-- Built from `debian:bullseye`
+- Built from `debian:trixie`
 - On first start: initialises the data directory with `mysql_install_db`, spins up a temporary instance to create the database, WordPress user, and root password, then restarts normally
 - Binds to `0.0.0.0` so WordPress can reach it over the Docker network
 - Data is persisted in a named Docker volume (`mariadb_data`)
