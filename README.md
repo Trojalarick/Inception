@@ -82,18 +82,30 @@ Inception/
     └── requirements/
         ├── mariadb/
         │   ├── Dockerfile
+        │   ├── conf/
+        │   │   └── my.cnf       # MariaDB configuration
         │   └── tools/
-        │       └── init_db.sh      # DB init + user setup script
+        │       └── init_db.sh   # DB init + user setup script
         ├── nginx/
         │   ├── Dockerfile
         │   ├── conf/
-        │   │   └── nginx.conf      # NGINX + TLS configuration
+        │   │   └── nginx.conf   # NGINX + TLS configuration
         │   └── tools/
-        │       └── start.sh        # SSL cert generation + nginx start
-        └── wordpress/
-            ├── Dockerfile
-            └── tools/
-                └── setup.sh        # WordPress download + PHP-FPM start
+        │       └── start.sh     # SSL cert generation + nginx start
+        ├── wordpress/
+        │   ├── Dockerfile
+        │   └── tools/
+        │       └── setup.sh     # WordPress download + PHP-FPM start
+        └── bonus/
+            ├── adminer/
+            │   └── Dockerfile
+            ├── ftp/
+            │   ├── Dockerfile
+            │   ├── start.sh     # FTP startup script
+            │   └── vsftpd.conf   # vsftpd configuration
+            └── redis/
+                ├── Dockerfile
+                └── redis.conf   # Redis configuration
 ```
 
 ---
