@@ -1,4 +1,11 @@
-﻿# Inception
+﻿
+
+
+
+
+
+
+# Inception
 
 > A system administration project from **42 School** -- deploying a small infrastructure using **Docker** and **Docker Compose**, with each service running in its own dedicated container.
 
@@ -6,13 +13,16 @@
 
 ## Overview
 
-This project sets up a fully functional WordPress website served over HTTPS, using three custom-built Docker containers:
+This project sets up a fully functional WordPress website served over HTTPS, using three core custom-built Docker containers, plus bonus services for file transfer, cache, and database administration:
 
 | Service       | Role                              | Exposed port    |
 |---------------|-----------------------------------|-----------------|
 | **NGINX**     | Reverse proxy with TLS (SSL)      | 443 (host)      |
 | **WordPress** | PHP-FPM application server        | 9000 (internal) |
 | **MariaDB**   | Relational database backend       | 3306 (internal) |
+| **Redis**     | In-memory cache backend           | 6379 (internal) |
+| **Adminer**   | Database administration UI        | 8080 (host)     |
+| **FTP**       | Passive file transfer service     | 21, 21100-21110 |
 
 All images are built from **Debian trixie** and orchestrated via `docker compose`.
 
@@ -31,12 +41,29 @@ User ──────────────────► NGINX
                       MySQL (port 3306)
                             ▼
                          MariaDB
+
+                        │
+                        │ Redis cache (port 6379)
+                        ▼
+                       Redis
+
+    Adminer (port 8080) ───────► MariaDB
+
+                    │
+                    │ shared `wordpress_data` volume
+                    ▼
+               FTP (port 21)
+                │
+                └── Passive data ports 21100-21110
 ```
 
 - **NGINX** is the only external entry point, listening on port 443 (TLSv1.2 / TLSv1.3).
 - **WordPress** handles PHP processing via PHP-FPM and connects to MariaDB.
 - **MariaDB** stores all WordPress data in a persistent Docker volume.
-- All three services communicate over a private Docker bridge network (`inception`).
+- **Redis** provides an in-memory cache backend for WordPress over the private Docker network.
+- **Adminer** offers a lightweight browser-based interface to inspect and manage MariaDB.
+- **FTP** provides authenticated file uploads and downloads through vsftpd, using the same WordPress data volume.
+- All services communicate over a private Docker bridge network (`inception`).
 
 ---
 
@@ -153,6 +180,27 @@ https://yourlogin.42.fr
 - On first start: initialises the data directory with `mysql_install_db`, spins up a temporary instance to create the database, WordPress user, and root password, then restarts normally
 - Binds to `0.0.0.0` so WordPress can reach it over the Docker network
 - Data is persisted in a named Docker volume (`mariadb_data`)
+
+## Bonus
+
+### Redis
+- Built from `debian:trixie` and runs `redis-server` without protected mode
+- Listens on port `6379` inside the Docker network and is not published to the host
+- Used as an in-memory cache backend for WordPress to reduce repeated database work and speed up page delivery
+- Communicates with WordPress over the private `inception` bridge network
+
+### Adminer
+- Built from `debian:trixie` and exposes its web interface on host port `8080`
+- Connects directly to MariaDB through the Docker network, using the database container name as the host
+- Provides a lightweight browser-based interface for managing the WordPress database without entering the MariaDB container
+- Useful for inspecting tables, running queries, and verifying database state during development
+
+### FTP
+- Built from `debian:trixie` and powered by `vsftpd`
+- Exposes the FTP control port on `21` and passive transfer ports on `21100-21110`
+- Uses a local `ftpuser` account created at container startup, with the working directory rooted in `/home/ftpuser/ftp`
+- Mounts the shared `wordpress_data` volume at `/var/www/html`, so uploaded files are immediately available to WordPress and NGINX
+- Integrates with the private Docker network (`inception`) and extends the stack with direct file transfer support for content management
 
 ---
 
