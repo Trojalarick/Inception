@@ -76,13 +76,22 @@ services:
       - "8080:8080"
     networks:
       - inception
-
+#switch to bind mode to /home/salhali/data
 volumes:
   mariadb_data:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/salhali/data/mariadb_data
   wordpress_data:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/salhali/data/wordpress_data
 
 networks:
   inception:
     driver: bridge
+

@@ -17,15 +17,13 @@ RUN mkdir -p /run/php
 
 WORKDIR /var/www/html
 
-RUN wget https://wordpress.org/latest.tar.gz \
-    && tar -xvf latest.tar.gz --strip-components=1 \
-    && rm latest.tar.gz
+# Install wp-cli
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+    && chmod +x wp-cli.phar \
+    && mv wp-cli.phar /usr/local/bin/wp
 
-# Install Redis plugin ONLY (no forcing)
-RUN curl -L -o redis-cache.zip https://downloads.wordpress.org/plugin/redis-cache.latest-stable.zip \
-    && unzip redis-cache.zip \
-    && mv redis-cache wp-content/plugins/ \
-    && rm redis-cache.zip
+# Install Redis plugin zip ahead of time (offline install in setup.sh)
+RUN curl -L -o /tmp/redis-cache.zip https://downloads.wordpress.org/plugin/redis-cache.latest-stable.zip
 
 RUN sed -i "s|listen = .*|listen = 9000|" /etc/php/8.4/fpm/pool.d/www.conf
 
@@ -35,5 +33,4 @@ COPY tools/setup.sh /setup.sh
 RUN chmod +x /setup.sh
 
 EXPOSE 9000
-
 CMD ["/setup.sh"]

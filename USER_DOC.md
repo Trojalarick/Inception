@@ -6,18 +6,18 @@ This project deploys a complete WordPress infrastructure using Docker.
 
 Available services:
 
-* WordPress website (served via HTTPS)
-* MariaDB database
-* Redis cache
-* Adminer (database management interface)
+* WordPress (HTTPS website)
+* MariaDB (database)
+* Redis (cache)
+* Adminer (database interface)
 * FTP server (file upload)
-* NGINX reverse proxy
+* NGINX (reverse proxy)
 
 ---
 
 ## Requirements
 
-Make sure the following are installed:
+Install:
 
 * Docker
 * Docker Compose
@@ -27,80 +27,76 @@ Make sure the following are installed:
 
 ## Setup
 
-### 1. Configure environment
+### 1. Configure Environment
 
-Edit the file:
+Edit:
 
-```id="a12k9d"
+```bash
 srcs/.env
 ```
 
 Example:
 
-```id="b77kq1"
-MYSQL_DATABASE=wordpress
-MYSQL_USER=salhali
-MYSQL_PASSWORD=wp_password
-MYSQL_ROOT_PASSWORD=root_password
+```env
+DB_NAME=wordpress
+DB_USER=salhali
+DB_PASS=wp_password
+DB_HOST=mariadb
+
+ADMIN_USER=admin
+ADMIN_PASS=admin_password
+ADMIN_EMAIL=admin@example.com
 ```
 
 ---
 
-### 2. Configure domain
+### 2. Configure Domain
 
-Add this line to `/etc/hosts`:
+Add to `/etc/hosts`:
 
-```id="c82md9"
+```bash
 127.0.0.1 yourlogin.42.fr
 ```
-
-Replace `yourlogin` with your login.
 
 ---
 
 ## Usage
 
-### Start the project
+### Start
 
-```id="d11pl0"
+```bash
 make
 ```
 
-This will:
-
-* Build all Docker images
-* Create containers
-* Start all services
-
 ---
 
-### Stop the project
+### Stop
 
-```id="e55xm2"
+```bash
 make down
 ```
 
 ---
 
-### Remove everything (containers + volumes)
+### Remove Containers + Volumes
 
-```id="f09qw3"
+```bash
 make clean
 ```
 
 ---
 
-### Full reset (containers + volumes + images)
+### Full Reset
 
-```id="g66rt8"
+```bash
 make fclean
 ```
 
 ---
 
-### Rebuild from scratch
+### Rebuild
 
-```id="h44az1"
+```bash
 make re
 ```
 
@@ -110,88 +106,82 @@ make re
 
 ### WordPress
 
-Open in browser:
-
-```id="i93vb2"
+```text
 https://yourlogin.42.fr
 ```
 
-Login using credentials defined in your setup.
-
 ---
 
-### Adminer (Database UI)
+### Adminer
 
-Open:
-
-```id="j12kl4"
+```text
 http://localhost:8080
 ```
 
-Login with:
+Login:
 
 * System: MySQL/MariaDB
 * Server: mariadb
-* Username: value from `.env`
-* Password: value from `.env`
+* Username: from `.env`
+* Password: from `.env`
 * Database: wordpress
 
 ---
 
-### FTP Server
+### FTP
 
-Connect using:
+Connect:
 
-```id="k88sd3"
+```bash
 ftp localhost
 ```
 
 Login:
 
-```id="l33xp7"
+```text
 User: ftpuser
 Password: ftppassword
 ```
 
-Upload file example:
+Upload file:
 
-```id="m90zn5"
+```bash
 put test.txt
 ```
 
-Uploaded files will appear in WordPress directory.
+Files will appear in WordPress directory.
 
 ---
 
 ## Service Checks
 
-### Check running containers
+### Containers
 
-```id="n12cv6"
+```bash
 docker ps
 ```
 
 ---
 
-### Check logs
+### Logs
 
-```id="o77rf2"
-docker logs <container_name>
+```bash
+docker logs <container>
 ```
 
 ---
 
-### Test MariaDB
+### MariaDB
 
-```id="p55az9"
+```bash
 docker exec -it mariadb mysql -u root -p
 ```
 
 ---
 
-### Test Redis
+### Redis
 
-```id="q21ls0"
+```bash
 docker exec -it redis redis-cli
 KEYS *
 ```
@@ -200,19 +190,18 @@ KEYS *
 
 ## Expected Behavior
 
-* WordPress loads over HTTPS
+* WordPress loads via HTTPS
 * Adminer connects to MariaDB
-* Redis cache stores WordPress objects
-* FTP uploads files directly into WordPress
-* Data persists after container restart
+* Redis caches WordPress data
+* FTP uploads files to WordPress
+* Data persists after restart
 
 ---
 
 ## Notes
 
-* If Redis is down, WordPress still works but without cache
-* If MariaDB is down, WordPress will not work
-* Do not modify containers manually; use Dockerfiles and scripts
-* Always use `make re` after configuration changes
-
----
+* If Redis is down → WordPress still works (no cache)
+* If MariaDB is down → WordPress will not work
+* Do not modify containers manually
+* Use Dockerfiles and scripts for changes
+* Use `make re` after major configuration updates

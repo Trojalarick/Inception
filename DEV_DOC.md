@@ -2,17 +2,17 @@
 
 ## Project Overview
 
-This project implements a small infrastructure using Docker and Docker Compose.
-Each service runs in its own container and communicates through a private Docker network.
+This project implements a containerized web infrastructure using Docker and Docker Compose.
+Each service runs in an isolated container and communicates through a dedicated bridge network.
 
 Main services:
 
 * NGINX (reverse proxy with HTTPS)
 * WordPress (PHP-FPM application)
 * MariaDB (database)
-* Redis (cache system)
+* Redis (object cache)
 * FTP (file transfer)
-* Adminer (database management)
+* Adminer (database interface)
 
 ---
 
@@ -24,10 +24,10 @@ Browser → NGINX → WordPress → MariaDB
 ↘ Redis (cache)
 
 * NGINX handles HTTPS and forwards PHP requests to WordPress via FastCGI (port 9000)
-* WordPress processes logic and queries data
+* WordPress processes application logic
 * Redis is checked first for cached data
 * If cache miss → WordPress queries MariaDB
-* Response returns back to browser through NGINX
+* Response flows back through NGINX to the browser
 
 ---
 
@@ -35,7 +35,7 @@ Browser → NGINX → WordPress → MariaDB
 
 ### Image vs Container
 
-* Image: blueprint built from Dockerfile (static)
+* Image: blueprint built from a Dockerfile (static)
 * Container: running instance of an image (dynamic)
 
 Flow:
@@ -46,18 +46,16 @@ Flow:
 
 ---
 
-### Docker Compose Role
+## Docker Compose Role
 
 Docker Compose is used to:
 
-* Define multiple services
+* Define multi-service architecture
 * Manage networking automatically
 * Attach volumes
-* Start everything with one command
+* Start all services with one command
 
-Command:
-
-```
+```bash
 docker compose up --build -d
 ```
 
@@ -65,259 +63,176 @@ docker compose up --build -d
 
 ## Networking
 
-* All containers are connected via a bridge network (`inception`)
+* All containers share a bridge network (`inception`)
 * Services communicate using container names:
 
-  * `mariadb`
-  * `redis`
-  * `wordpress`
+Examples:
 
-Example:
-WordPress connects to MariaDB using:
+* `mariadb`
+* `redis`
+* `wordpress`
 
-```
+Example configuration:
+
+```bash
 DB_HOST=mariadb
 ```
 
 ---
 
-## Volumes (Data Persistence)
+## Volumes (Bind Mounts)
 
-Two main volumes:
+Persistent data is stored using bind mounts:
 
-* mariadb_data → database storage
-* wordpress_data → website files
+* `/home/salhali/data/mariadb_data` → MariaDB data
+* `/home/salhali/data/wordpress_data` → WordPress files
 
-Important behavior:
+Key behavior:
 
-* `docker compose down` → keeps volumes
-* `docker compose down -v` → deletes volumes
-* `make re` → deletes everything (containers + volumes + images)
+* `docker compose down` → keeps data
+* `docker compose down -v` → removes volumes
+* `make re` → full reset (containers, volumes, images)
+
+Bind mounts ensure data is stored on the host and persists across container rebuilds.
+
+---
+
+## Service Dependency
+
+Important distinction:
+
+* `depends_on` → controls startup order only
+* Does NOT guarantee readiness
+
+To solve this, WordPress uses:
+
+```bash
+nc -z mariadb 3306
+```
+
+to wait until MariaDB is ready.
 
 ---
 
 ## Redis Integration
 
-Redis is used as an object cache for WordPress.
+Redis is used as an object cache.
 
 Flow:
 
-1. WordPress requests data
+1. WordPress receives request
 2. Check Redis
 3. If found → return immediately
-4. If not found → query MariaDB
-5. Store result in Redis for future requests
+4. If not → query MariaDB
+5. Store result in Redis
 
-Important:
+Notes:
 
 * Redis stores objects, not logs
-* Runs in RAM (in-memory)
+* Runs in memory (RAM)
+* Improves performance but is not required for functionality
 
 ---
 
-## Redis Configuration Issue (Fixed)
+## WordPress Automation (WP-CLI)
 
-Problem:
+WordPress is fully automated using WP-CLI inside the container.
 
-* WordPress could not connect to Redis
-* Error: connection refused (127.0.0.1)
+### Setup Flow
 
-Cause:
+1. Wait for MariaDB
+2. Download WordPress
+3. Create `wp-config.php`
+4. Install WordPress
+5. Create users
+6. Install Redis plugin
+7. Enable Redis cache
+8. Start PHP-FPM
 
-* WordPress tried to connect to localhost instead of Redis container
+### Example Commands
 
-Solution added in wp-config.php:
+```bash
+wp core download --allow-root
 
-```
-define('WP_REDIS_HOST', 'redis');
-define('WP_REDIS_PORT', 6379);
-```
+wp config create \
+  --dbname=$DB_NAME \
+  --dbuser=$DB_USER \
+  --dbpass=$DB_PASS \
+  --dbhost=$DB_HOST \
+  --allow-root
 
----
+wp core install \
+  --url=$SITE_URL \
+  --title=$SITE_TITLE \
+  --admin_user=$ADMIN_USER \
+  --admin_password=$ADMIN_PASS \
+  --admin_email=$ADMIN_EMAIL \
+  --allow-root
 
-## FTP Configuration Issues (Fixed)
-
-### Problem 1: Cannot bind port 21
-
-Error:
-
-```
-cannot expose privileged port 21
-```
-
-Cause:
-
-* Rootless Docker cannot bind ports < 1024
-
-Solution:
-
-* Use port >= 1024 OR adjust system config
-* Example: 2121 instead of 21
-
----
-
-### Problem 2: Passive mode connection refused
-
-Error:
-
-```
-Entering Extended Passive Mode ... connection refused
-```
-
-Cause:
-
-* Passive ports not exposed or wrong configuration
-
-Solution:
-
-* Expose ports in docker-compose:
-
-```
-21100-21110:21100-21110
-```
-
-* Configure vsftpd:
-
-```
-pasv_enable=YES
-pasv_min_port=21100
-pasv_max_port=21110
-pasv_address=127.0.0.1
+wp plugin install redis-cache --activate --allow-root
+wp redis enable --allow-root
 ```
 
 ---
 
-### Problem 3: File upload failed (553 error)
+## Debugging Strategy
 
-Cause:
+Common commands used:
 
-* Permission issue or wrong directory
-
-Solution:
-
-* Ensure correct ownership:
-
-```
-chown -R ftpuser:ftpuser /var/www/html
-```
-
-* Set correct root:
-
-```
-local_root=/var/www/html
-```
-
----
-
-### Problem 4: Config lost after rebuild
-
-Cause:
-
-* Manual changes inside container are not persistent
-
-Solution:
-
-* Move configuration into:
-
-  * Dockerfile
-  * vsftpd.conf (copied during build)
-  * start.sh script
-
----
-
-## Adminer Issue (Fixed)
-
-Problem:
-
-* "Connection refused"
-
-Cause:
-
-* Wrong host used
-
-Wrong:
-
-```
-localhost
-```
-
-Correct:
-
-```
-mariadb
-```
-
----
-
-## Service Dependency Clarification
-
-Important concept:
-
-Docker `depends_on`:
-
-* Only controls startup order
-* Does NOT guarantee service readiness
-
-Application-level dependency:
-
-* WordPress handles failure itself
-
-Example:
-
-* If Redis is down:
-
-  * WordPress still works
-  * Falls back to MariaDB
-
----
-
-## Useful Commands
-
-Check containers:
-
-```
+```bash
 docker ps
-```
-
-Access container:
-
-```
+docker logs <container>
 docker exec -it <container> bash
 ```
 
-Check logs:
+Service testing:
 
-```
-docker logs <container>
-```
-
-Test Redis:
-
-```
-docker exec -it redis redis-cli
-KEYS *
+```bash
+redis-cli
+mysql -u root -p
 ```
 
-Test MariaDB:
+This approach helps isolate infrastructure vs application issues.
 
-```
-docker exec -it mariadb mysql -u root -p
+---
+
+## Common Issues (Resolved)
+
+### Redis Connection
+
+* Cause: using `localhost`
+* Fix:
+
+```php
+define('WP_REDIS_HOST', 'redis');
 ```
 
-Test FTP:
+---
 
+### FTP Passive Mode
+
+* Cause: ports not exposed
+* Fix:
+
+```bash
+21100-21110:21100-21110
 ```
-ftp localhost
-```
+
+---
+
+### Permissions (Bind Mounts)
+
+* Cause: container user ≠ host user
+* Fix: adjust ownership using `chown`
 
 ---
 
 ## Final Notes
 
-* All services run independently but communicate through the Docker network
-* Data persistence is handled via volumes
-* Redis improves performance but is optional at runtime
-* Configuration must always be defined in Dockerfiles or scripts, not manually inside containers
-* The system is fully reproducible using `make re`
+* Services are isolated but interconnected
+* Data persistence is handled via bind mounts
+* Redis improves performance but is optional
+* Configuration must be defined in Dockerfiles or scripts
+* System is fully reproducible using `make re`
 
----
+This architecture demonstrates container isolation, service communication, and infrastructure automation using Docker.
