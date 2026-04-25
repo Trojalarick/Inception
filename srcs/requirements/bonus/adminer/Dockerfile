@@ -17,4 +17,4 @@ RUN sed -i "s|listen = .*|listen = 9001|" /etc/php/8.4/fpm/pool.d/www.conf
 
 EXPOSE 9001
 
-CMD ["php-fpm8.4", "-F"]
+CMD ["php", "-S", "0.0.0.0:8080"]

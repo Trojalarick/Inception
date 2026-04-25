@@ -1,10 +1,10 @@
 #!/bin/bash
 
-useradd -m ftpuser
+id "ftpuser" &>/dev/null || useradd -m ftpuser
 
 echo "ftpuser:ftppassword" | chpasswd
 
-mkdir -p /home/ftpuser/ftp
-chown -R ftpuser:ftpuser /home/ftpuser
+#  FIX PERMISSIONS
+chown -R ftpuser:ftpuser /var/www/html
 
 exec vsftpd /etc/vsftpd.conf

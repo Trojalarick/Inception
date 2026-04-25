@@ -7,9 +7,11 @@ all: up
 up:
 	$(COMPOSE) up --build -d
 
+#keep data
 down:
 	$(COMPOSE) down
 
+#delete data
 clean:
 	$(COMPOSE) down -v
 
