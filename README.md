@@ -1,4 +1,4 @@
-![Architecture](image.png)
+![Architecture](inception-architecture.png)
 
 # Inception
 
