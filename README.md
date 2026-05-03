@@ -1,9 +1,4 @@
-﻿
-
-
-
-
-
+![Architecture](image.png)
 
 # Inception
 
