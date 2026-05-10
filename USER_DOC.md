@@ -38,14 +38,30 @@ srcs/.env
 Example:
 
 ```env
+MYSQL_ROOT_PASSWORD=root_password
+MYSQL_DATABASE=wordpress
+MYSQL_USER=your_user
+MYSQL_PASSWORD=your_password
+
 DB_NAME=wordpress
-DB_USER=salhali
-DB_PASS=wp_password
+DB_USER=your_user
+DB_PASS=your_password
 DB_HOST=mariadb
 
-ADMIN_USER=admin
-ADMIN_PASS=admin_password
-ADMIN_EMAIL=admin@example.com
+SITE_URL=https://yourlogin.42.fr
+SITE_TITLE=Inception
+
+ADMIN_USER=your_user
+ADMIN_PASS=your_password
+ADMIN_EMAIL=your@email.com
+
+FTP_USER=your_user
+FTP_PASS=your_pass
+
+REGULAR_USER=user
+REGULAR_PASS=user_password
+REGULAR_EMAIL=user@email.com
+REGULAR_ROLE=editor
 ```
 
 ---
@@ -139,8 +155,8 @@ ftp localhost
 Login:
 
 ```text
-User: ftpuser
-Password: ftppassword
+User: your_user
+Password: your_pass
 ```
 
 Upload file:
